@@ -1,0 +1,26 @@
+      - name: Unzip Project Archive
+        run: |
+          # Ekstrak ZIP dan pastikan masuk ke folder yang benar
+          unzip -q AlfyDownloaderProject.zip -d extracted_project
+          
+      - name: Find and Build APK with Gradle
+        run: |
+          echo "Mencari file gradlew di dalam direktori proyek..."
+          # Mencari file gradlew secara rekursif di semua sub-folder
+          GRADLEW_PATH=$(find . -name "gradlew" -type f -print -quit)
+          
+          if [ -z "$GRADLEW_PATH" ]; then
+            echo "Error: File gradlew tidak ditemukan sama sekali!"
+            echo "Menampilkan daftar isi folder saat ini untuk debugging:"
+            ls -R
+            exit 1
+          fi
+          
+          # Ambil direktori tempat gradlew berada
+          GRADLEW_DIR=$(dirname "$GRADLEW_PATH")
+          echo "File gradlew ditemukan di: $GRADLEW_DIR"
+          
+          # Masuk ke direktori project, beri izin eksekusi, lalu jalankan build
+          cd "$GRADLEW_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug
