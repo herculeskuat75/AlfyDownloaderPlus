@@ -52,17 +52,25 @@ jobs:
             echo "No keystore secret - release APK will be signed with the debug key."
           fi
 
+      - name: Locate Gradle project
+        run: |
+          S=$(find . -maxdepth 4 -name settings.gradle.kts -not -path "*/.git/*" | head -n 1)
+          if [ -z "$S" ]; then echo "settings.gradle.kts not found in repo"; ls -R | head -50; exit 1; fi
+          echo "PROJECT_DIR=$(dirname "$S")" >> "$GITHUB_ENV"
+
       - name: Build release APK
+        working-directory: ${{ env.PROJECT_DIR }}
         run: gradle --no-daemon assembleRelease --stacktrace
 
       - name: Prepare APK
         id: apk
+        working-directory: ${{ env.PROJECT_DIR }}
         run: |
           VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           NAME="AlfyDownloader-v${VERSION}-build${GITHUB_RUN_NUMBER}.apk"
           SRC=$(ls app/build/outputs/apk/release/*.apk | head -n 1)
-          cp "$SRC" "$NAME"
-          SIZE=$(du -h "$NAME" | cut -f1)
+          cp "$SRC" "$GITHUB_WORKSPACE/$NAME"
+          SIZE=$(du -h "$GITHUB_WORKSPACE/$NAME" | cut -f1)
           echo "name=$NAME" >> "$GITHUB_OUTPUT"
           echo "tag=v${VERSION}-build${GITHUB_RUN_NUMBER}" >> "$GITHUB_OUTPUT"
           echo "size=$SIZE" >> "$GITHUB_OUTPUT"
