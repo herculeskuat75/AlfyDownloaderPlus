@@ -54,8 +54,19 @@ jobs:
 
       - name: Locate Gradle project
         run: |
-          S=$(find . -maxdepth 4 -name settings.gradle.kts -not -path "*/.git/*" | head -n 1)
-          if [ -z "$S" ]; then echo "settings.gradle.kts not found in repo"; ls -R | head -50; exit 1; fi
+          find_settings() { find . -maxdepth 5 -name settings.gradle.kts -not -path "*/.git/*" -not -path "./_unzipped/*" | head -n 1; }
+          S=$(find_settings)
+          if [ -z "$S" ]; then
+            # Project was uploaded as a .zip file: extract it automatically
+            Z=$(find . -maxdepth 2 -name "*.zip" -not -path "*/.git/*" | head -n 1)
+            if [ -n "$Z" ]; then
+              echo "Extracting $Z"
+              mkdir -p _unzipped && unzip -q -o "$Z" -d _unzipped
+              S=$(find _unzipped -maxdepth 5 -name settings.gradle.kts | head -n 1)
+            fi
+          fi
+          if [ -z "$S" ]; then echo "settings.gradle.kts not found"; ls -la; exit 1; fi
+          echo "Gradle project: $(dirname "$S")"
           echo "PROJECT_DIR=$(dirname "$S")" >> "$GITHUB_ENV"
 
       - name: Build release APK
