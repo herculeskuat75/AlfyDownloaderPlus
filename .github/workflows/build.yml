@@ -7,11 +7,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Unpack project zip
+        run: |
+          if [ -f AlfyDownloaderPlus.zip ]; then
+            unzip -o -q AlfyDownloaderPlus.zip -d _project
+          fi
       - name: Locate Gradle project
         run: |
           f=$(find . -name settings.gradle.kts -not -path './.git/*' | head -n1)
           if [ -z "$f" ]; then
-            echo "settings.gradle.kts NOT FOUND. Repo contents:"
+            echo "settings.gradle.kts NOT FOUND"
             find . -not -path './.git/*' -type f | head -60
             exit 1
           fi
